@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>人員組織新增｜EMR FHIR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EBF0EE; --panel:#FFFFFF; --ink:#1C2A29; --muted:#5C6E6B; --line:#CFD9D6;
+  --accent:#23705F; --accent-ink:#FFFFFF; --put:#9A6A12; --post:#23705F;
+  --err:#B03A2B; --ok:#23705F; --code-bg:#14211F; --code-ink:#D6EAE4; --sel:#DCEDE7;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#111917; --panel:#1A2422; --ink:#E3ECE9; --muted:#93A6A2; --line:#2E3D3A;
+    --accent:#4FB39A; --accent-ink:#0E1715; --put:#E0B054; --post:#4FB39A;
+    --err:#E7786A; --ok:#6CCDB2; --code-bg:#0B1110; --code-ink:#C9E2DB; --sel:#23423A;
+    color-scheme: dark;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 "Noto Sans TC","Microsoft JhengHei",sans-serif}
+code,pre,.mono{font-family:"IBM Plex Mono",Consolas,monospace}
+header{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;padding:18px 24px;border-bottom:1px solid var(--line);background:var(--panel)}
+header h1{font-size:20px;margin:0 auto 0 0;font-weight:700}
+header label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+header input{width:260px}
+main{display:grid;grid-template-columns:280px minmax(0,1fr) minmax(0,420px);gap:0;min-height:calc(100% - 80px)}
+aside,section,.preview{padding:20px 22px}
+aside{border-right:1px solid var(--line)}
+.preview{border-left:1px solid var(--line);background:var(--panel)}
+h2{font-size:16px;margin:0 0 12px}
+h3{font-size:15px;margin:0}
+input,select{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible,.node:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button{font:inherit;font-weight:500;border:0;border-radius:6px;padding:8px 16px;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+button:disabled{opacity:.5;cursor:not-allowed}
+.tree{list-style:none;margin:0;padding:0}
+.tree ul{list-style:none;margin:0;padding-left:16px;border-left:1px solid var(--line)}
+.node{display:block;width:100%;text-align:left;background:none;color:var(--ink);padding:5px 8px;border-radius:5px;font-weight:400}
+.node:hover{background:var(--sel)}
+.node.on{background:var(--sel);font-weight:700}
+.node small{display:block;color:var(--muted);font-size:12px}
+.empty{color:var(--muted);font-size:14px}
+details{background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-bottom:14px}
+summary{list-style:none;cursor:pointer;padding:14px 18px;display:flex;align-items:baseline;gap:12px}
+summary::-webkit-details-marker{display:none}
+summary .step{font-weight:700;color:var(--accent);min-width:1.5em}
+summary .res{margin-left:auto;font-size:12px;color:var(--muted)}
+.body{padding:2px 18px 18px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
+.grid .full{grid-column:1/-1}
+.field{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--muted)}
+.field .hint{font-size:12px}
+.idline{margin:14px 0 12px;font-size:14px}
+.idline b{font-family:"IBM Plex Mono",monospace;font-weight:500;color:var(--ink)}
+.check{flex-direction:row;align-items:center;gap:8px;color:var(--ink)}
+.check input{width:auto}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.req{font-size:13px;margin:0 0 8px}
+.method{font-weight:700;margin-right:6px}
+.method.PUT{color:var(--put)} .method.POST,.method.GET{color:var(--post)}
+pre{background:var(--code-bg);color:var(--code-ink);padding:14px;border-radius:8px;overflow:auto;font-size:12.5px;line-height:1.55;max-height:46vh;margin:0 0 18px}
+.log{list-style:none;padding:0;margin:0;font-size:13px}
+.log li{padding:7px 0;border-top:1px solid var(--line)}
+.log .ok{color:var(--ok)} .log .err{color:var(--err)}
+.msg{font-size:13px;margin-top:10px;min-height:1.4em}
+.msg.err{color:var(--err)} .msg.ok{color:var(--ok)}
+@media (max-width:1100px){
+  main{grid-template-columns:240px minmax(0,1fr)}
+  .preview{grid-column:1/-1;border-left:0;border-top:1px solid var(--line)}
+}
+@media (max-width:720px){
+  main{grid-template-columns:1fr}
+  aside{border-right:0;border-bottom:1px solid var(--line)}
+  .grid{grid-template-columns:1fr}
+  header input{width:100%}
+  header label{width:100%}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <h1>人員組織新增</h1>
+  <label>EMR FHIR base<input id="emrBase" class="mono" value="https://hapi.fhir.org/baseR4"></label>
+  <label>Portal FHIR base（與 EMR 相同時不重複寫入）<input id="portalBase" class="mono" value="https://hapi.fhir.org/baseR4"></label>
+  <label>Bearer token（選填）<input id="token" type="password" class="mono" autocomplete="off"></label>
+</header>
+
+<main>
+  <aside>
+    <h2>組織樹</h2>
+    <div class="actions" style="margin-bottom:12px"><button class="ghost" id="reloadTree" type="button">重新載入</button></div>
+    <div id="tree"><p class="empty">載入中…</p></div>
+  </aside>
+
+  <section>
+    <!-- Step 1 -->
+    <details open id="s1">
+      <summary><span class="step">1</span><h3>新增組織單位</h3><span class="res mono">Organization・PUT</span></summary>
+      <div class="body">
+        <div class="grid">
+          <label class="field">院區代碼<input id="o_site" class="mono" placeholder="hlc"><span class="hint">小寫英數，例如 hlc、dlc、tzc</span></label>
+          <label class="field">單位代碼<input id="o_unit" class="mono" placeholder="cardio"><span class="hint">留空代表新增院區本身</span></label>
+          <label class="field">名稱<input id="o_name" placeholder="花蓮慈濟醫院心臟內科"></label>
+          <label class="field">簡稱<input id="o_alias" placeholder="心臟內科"></label>
+          <label class="field">單位類型
+            <select id="o_type">
+              <option value="hospital">醫院</option>
+              <option value="department" selected>部門／科別</option>
+              <option value="ward">病房</option>
+              <option value="care-center">照護中心</option>
+              <option value="admin">行政單位</option>
+            </select>
+          </label>
+          <label class="field">城市<input id="o_city" value="花蓮市"></label>
+          <label class="field full">電話（選填）<input id="o_phone"></label>
+          <label class="field check full"><input type="checkbox" id="o_public" checked>公開單位，同步寫入 Portal（同一 id）</label>
+        </div>
+        <p class="idline">id：<b id="o_id">—</b>　上層：<b id="o_parent">—</b></p>
+        <div class="actions"><button id="o_save" type="button">建立組織</button></div>
+        <p class="msg" id="o_msg"></p>
+      </div>
+    </details>
+
+    <!-- Step 2 -->
+    <details id="s2">
+      <summary><span class="step">2</span><h3>新增醫護人員</h3><span class="res mono">Practitioner・POST</span></summary>
+      <div class="body">
+        <div class="grid">
+          <label class="field">醫事人員證書字號<input id="p_lic" class="mono" placeholder="DOC-001"></label>
+          <label class="field">性別
+            <select id="p_gender"><option value="male">男</option><option value="female">女</option><option value="other">其他</option><option value="unknown">不詳</option></select>
+          </label>
+          <label class="field">姓<input id="p_family" placeholder="林"></label>
+          <label class="field">名<input id="p_given" placeholder="志明"></label>
+          <label class="field">電話（選填）<input id="p_phone"></label>
+          <label class="field">專業資格<input id="p_qual" placeholder="醫師證書｜心臟專科醫師"></label>
+        </div>
+        <p class="idline">id：<b>由伺服器產生</b>　先以證書字號查重，已存在則沿用</p>
+        <div class="actions"><button id="p_save" type="button">建立醫護人員</button></div>
+        <p class="msg" id="p_msg"></p>
+      </div>
+    </details>
+
+    <!-- Step 3 -->
+    <details id="s3">
+      <summary><span class="step">3</span><h3>指派職務</h3><span class="res mono">PractitionerRole・PUT</span></summary>
+      <div class="body">
+        <div class="grid">
+          <label class="field">醫護人員（證書字號）<input id="r_lic" class="mono" placeholder="DOC-001"><span class="hint" id="r_pracInfo">輸入後按「查詢」</span></label>
+          <div class="field" style="justify-content:flex-end"><button class="ghost" id="r_find" type="button">查詢</button></div>
+          <label class="field full">任職單位
+            <select id="r_org"></select>
+          </label>
+          <label class="field">職稱
+            <select id="r_code">
+              <option value="doctor|Doctor">醫師</option>
+              <option value="nurse|Nurse">護理師</option>
+              <option value="pharmacist|Pharmacist">藥師</option>
+              <option value="researcher|Researcher">研究人員</option>
+              <option value="teacher|Teacher">教學人員</option>
+              <option value="ict|ICT professional">資訊人員</option>
+            </select>
+          </label>
+          <label class="field">專科
+            <select id="r_spec">
+              <option value="">（不指定）</option>
+              <option value="394579002|Cardiology">心臟內科</option>
+              <option value="418112009|Pulmonary medicine">胸腔內科</option>
+              <option value="394591006|Neurology">神經內科</option>
+              <option value="419192003|Internal medicine">一般內科</option>
+              <option value="394609007|General surgery">一般外科</option>
+              <option value="394537008|Pediatric specialty">小兒科</option>
+              <option value="408478003|Critical care medicine">重症醫學</option>
+            </select>
+          </label>
+          <label class="field">到職日<input id="r_start" type="date"></label>
+          <label class="field">離職日（選填）<input id="r_end" type="date"></label>
+        </div>
+        <p class="idline">id：<b id="r_id">—</b></p>
+        <div class="actions"><button id="r_save" type="button" disabled>指派職務</button></div>
+        <p class="msg" id="r_msg"></p>
+      </div>
+    </details>
+  </section>
+
+  <div class="preview">
+    <h2>即將送出的請求</h2>
+    <p class="req mono" id="reqLine">—</p>
+    <pre id="reqBody">{}</pre>
+    <h2>紀錄</h2>
+    <ul class="log" id="log"><li class="empty">尚無操作</li></ul>
+  </div>
+</main>
+
+<script>
+const ORG_ID_SYS = "https://tzuchi.org/fhir/organization-id";
+const ORG_TYPE_SYS = "http://terminology.hl7.org/CodeSystem/organization-type";
+const UNIT_TYPE_SYS = "https://tzuchi.org/fhir/CodeSystem/org-unit-type";
+const DOC_ID_SYS = "http://mohw.gov.tw/doc-id";
+const ROLE_SYS = "http://terminology.hl7.org/CodeSystem/practitioner-role";
+const SNOMED = "http://snomed.info/sct";
+const UNIT_TEXT = { hospital:"醫院", department:"部門／科別", ward:"病房", "care-center":"照護中心", admin:"行政單位" };
+const ID_RE = /^[A-Za-z0-9\-.]{1,64}$/;
+const $ = id => document.getElementById(id);
+
+// ---------- settings ----------
+["emrBase","portalBase"].forEach(k => {
+  try { const v = localStorage.getItem("orgadmin2."+k); if (v) $(k).value = v; } catch(e){}
+  $(k).addEventListener("change", () => { try { localStorage.setItem("orgadmin2."+k, $(k).value.trim()); } catch(e){} loadTree(); });
+});
+const base = k => $(k).value.trim().replace(/\/+$/,"");
+
+async function fhir(baseKey, method, path, body) {
+  const headers = { "Accept":"application/fhir+json" };
+  if (body) headers["Content-Type"] = "application/fhir+json";
+  const tk = $("token").value.trim();
+  if (tk) headers["Authorization"] = "Bearer " + tk;
+  const url = base(baseKey) + "/" + path;
+  let res;
+  try { res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : undefined }); }
+  catch (e) { throw new Error("無法連線到 " + url + "（請確認網址、CORS 或網路）"); }
+  const text = await res.text();
+  let json = null; try { json = text ? JSON.parse(text) : null; } catch(e){}
+  if (!res.ok) {
+    const diag = json && json.issue ? json.issue.map(i => i.diagnostics).filter(Boolean).join("；") : text.slice(0,200);
+    const err = new Error(`${method} ${path} 失敗（HTTP ${res.status}）${diag ? "：" + diag : ""}`);
+    err.status = res.status; throw err;
+  }
+  return { status: res.status, json };
+}
+
+function showReq(method, baseKey, path, body) {
+  $("reqLine").innerHTML = `<span class="method ${method}">${method}</span>${escapeHtml(base(baseKey) + "/" + path)}`;
+  $("reqBody").textContent = body ? JSON.stringify(body, null, 2) : "（無內容）";
+}
+function log(ok, text) {
+  const ul = $("log");
+  if (ul.querySelector(".empty")) ul.innerHTML = "";
+  const li = document.createElement("li");
+  li.className = ok ? "ok" : "err";
+  li.textContent = new Date().toLocaleTimeString("zh-TW", {hour12:false}) + "　" + text;
+  ul.prepend(li);
+}
+function msg(id, ok, text) { const el = $(id); el.className = "msg " + (ok ? "ok" : "err"); el.textContent = text; }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+// ---------- org tree ----------
+let orgs = [];
+let selectedOrg = null;
+
+async function loadTree() {
+  $("tree").innerHTML = '<p class="empty">載入中…</p>';
+  try {
+    orgs = [];
+    // 只讀我方 identifier system 的組織，公開伺服器上其他人的資料不會混進來
+    let next = `Organization?identifier=${encodeURIComponent(ORG_ID_SYS + "|")}&_count=200`;
+    while (next) {
+      const { json } = await fhir("emrBase", "GET", next);
+      (json.entry || []).forEach(e => orgs.push(e.resource));
+      const link = (json.link || []).find(l => l.relation === "next");
+      next = link ? link.url.replace(base("emrBase") + "/", "") : null;
+      if (link && next === link.url) next = null; // different host; stop
+    }
+    renderTree(); fillOrgSelect();
+  } catch (e) {
+    $("tree").innerHTML = `<p class="empty">${escapeHtml(e.message)}</p>`;
+  }
+}
+
+function renderTree() {
+  if (!orgs.length) { $("tree").innerHTML = '<p class="empty">目前沒有組織。從步驟 1 新增第一個院區。</p>'; return; }
+  const byParent = {};
+  const ids = new Set(orgs.map(o => o.id));
+  orgs.forEach(o => {
+    const p = o.partOf && o.partOf.reference ? o.partOf.reference.replace("Organization/","") : null;
+    const key = p && ids.has(p) ? p : "__root";
+    (byParent[key] = byParent[key] || []).push(o);
+  });
+  const build = key => {
+    const list = byParent[key]; if (!list) return "";
+    return "<ul class='tree'>" + list.map(o =>
+      `<li><button type="button" class="node${selectedOrg === o.id ? " on" : ""}" data-id="${escapeHtml(o.id)}">${escapeHtml(o.name || o.id)}<small class="mono">${escapeHtml(o.id)}</small></button>${build(o.id)}</li>`
+    ).join("") + "</ul>";
+  };
+  $("tree").innerHTML = build("__root");
+  $("tree").querySelectorAll(".node").forEach(b => b.addEventListener("click", () => selectOrg(b.dataset.id)));
+}
+
+function selectOrg(id) {
+  selectedOrg = id;
+  const site = id.replace(/^org-/,"").split("-")[0];
+  $("o_site").value = site;
+  $("r_org").value = id;
+  renderTree(); updateOrgPreview(); updateRolePreview();
+}
+
+function fillOrgSelect() {
+  const cur = $("r_org").value;
+  $("r_org").innerHTML = orgs.map(o => `<option value="${escapeHtml(o.id)}">${escapeHtml(o.name || o.id)}（${escapeHtml(o.id)}）</option>`).join("");
+  if (cur && orgs.some(o => o.id === cur)) $("r_org").value = cur;
+}
+
+$("reloadTree").addEventListener("click", loadTree);
+
+// ---------- step 1: Organization ----------
+function buildOrg() {
+  const site = $("o_site").value.trim().toLowerCase();
+  const unit = $("o_unit").value.trim().toLowerCase();
+  const type = unit ? $("o_type").value : "hospital";
+  if (!site) return { error: "請填院區代碼" };
+  const id = unit ? `org-${site}-${unit}` : `org-${site}`;
+  if (!ID_RE.test(id) || /[A-Z]/.test(id)) return { error: "代碼只能用小寫英數與連字號" };
+  if (!$("o_name").value.trim()) return { id, error: "請填名稱" };
+  const isHospital = type === "hospital";
+  const r = {
+    resourceType: "Organization", id,
+    identifier: [{ system: ORG_ID_SYS, value: id }],
+    active: true,
+    type: [{ coding: [
+      isHospital ? { system: ORG_TYPE_SYS, code: "prov", display: "Healthcare Provider" }
+                 : { system: ORG_TYPE_SYS, code: "dept", display: "Hospital Department" },
+      { system: UNIT_TYPE_SYS, code: type }
+    ], text: UNIT_TEXT[type] }],
+    name: $("o_name").value.trim()
+  };
+  if ($("o_alias").value.trim()) r.alias = [$("o_alias").value.trim()];
+  if ($("o_phone").value.trim()) r.telecom = [{ system: "phone", value: $("o_phone").value.trim(), use: "work" }];
+  if (unit) r.partOf = { reference: `Organization/org-${site}` };
+  if ($("o_city").value.trim()) r.address = [{ use: "work", city: $("o_city").value.trim(), country: "TW" }];
+  return { id, resource: r };
+}
+function updateOrgPreview() {
+  const b = buildOrg();
+  $("o_id").textContent = b.id || "—";
+  $("o_parent").textContent = b.resource && b.resource.partOf ? b.resource.partOf.reference.replace("Organization/","") : "（無，院區本身）";
+  if ($("o_unit").value.trim()) { $("o_type").disabled = false; } else { $("o_type").value = "hospital"; $("o_type").disabled = true; }
+  if (b.resource) showReq("PUT", "emrBase", "Organization/" + b.id, b.resource);
+}
+["o_site","o_unit","o_name","o_alias","o_type","o_city","o_phone"].forEach(k => $(k).addEventListener("input", updateOrgPreview));
+$("s1").addEventListener("toggle", () => { if ($("s1").open) updateOrgPreview(); });
+
+$("o_save").addEventListener("click", async () => {
+  const b = buildOrg();
+  if (b.error) return msg("o_msg", false, b.error);
+  const r = b.resource;
+  if (r.partOf && !orgs.some(o => o.id === r.partOf.reference.replace("Organization/",""))) {
+    return msg("o_msg", false, `上層院區 ${r.partOf.reference.replace("Organization/","")} 尚未建立，請先新增院區（單位代碼留空）。`);
+  }
+  let orgExists = false;
+  try { await fhir("emrBase", "GET", "Organization/" + b.id); orgExists = true; } catch (e) { if (e.status !== 404 && e.status !== 410) return msg("o_msg", false, e.message); }
+  if (orgExists && !confirm(`${b.id} 已存在於伺服器（可能是別人建立的），PUT 會覆寫現有資料。確定要覆寫嗎？`)) return;
+  if ($("o_public").checked && r.type[0].coding[1].code === "admin") {
+    return msg("o_msg", false, "行政單位不屬於公開資訊，請取消「同步寫入 Portal」。");
+  }
+  $("o_save").disabled = true;
+  try {
+    showReq("PUT", "emrBase", "Organization/" + b.id, r);
+    const res = await fhir("emrBase", "PUT", "Organization/" + b.id, r);
+    log(true, `EMR：Organization/${b.id} ${res.status === 201 ? "已建立" : "已更新"}`);
+    let note = "";
+    if ($("o_public").checked && base("portalBase") === base("emrBase")) {
+      note = "（Portal 與 EMR 為同一台伺服器，不重複寫入）";
+    } else if ($("o_public").checked) {
+      try {
+        const pr = await fhir("portalBase", "PUT", "Organization/" + b.id, r);
+        log(true, `Portal：Organization/${b.id} ${pr.status === 201 ? "已建立" : "已更新"}`);
+        note = "，已同步到 Portal";
+      } catch (e) { log(false, "Portal：" + e.message); note = "，但 Portal 同步失敗（見紀錄）"; }
+    }
+    msg("o_msg", true, `已建立組織 ${b.id}${note}`);
+    await loadTree(); selectOrg(b.id);
+  } catch (e) { log(false, e.message); msg("o_msg", false, e.message); }
+  finally { $("o_save").disabled = false; }
+});
+
+// ---------- step 2: Practitioner ----------
+function buildPrac() {
+  const lic = $("p_lic").value.trim();
+  if (!lic) return { error: "請填醫事人員證書字號" };
+  if (!$("p_family").value.trim() || !$("p_given").value.trim()) return { lic, error: "請填姓與名" };
+  const r = {
+    resourceType: "Practitioner",
+    identifier: [{ system: DOC_ID_SYS, value: lic }],
+    active: true,
+    name: [{ use: "official", family: $("p_family").value.trim(), given: [$("p_given").value.trim()] }],
+    gender: $("p_gender").value
+  };
+  if ($("p_phone").value.trim()) r.telecom = [{ system: "phone", value: $("p_phone").value.trim(), use: "work" }];
+  if ($("p_qual").value.trim()) r.qualification = [{ code: { text: $("p_qual").value.trim() } }];
+  return { lic, resource: r };
+}
+function updatePracPreview() { const b = buildPrac(); if (b.resource) showReq("POST", "emrBase", "Practitioner", b.resource); }
+["p_lic","p_family","p_given","p_gender","p_phone","p_qual"].forEach(k => $(k).addEventListener("input", updatePracPreview));
+$("s2").addEventListener("toggle", () => { if ($("s2").open) updatePracPreview(); });
+
+async function findPracByLic(lic) {
+  const q = `Practitioner?identifier=${encodeURIComponent(DOC_ID_SYS + "|" + lic)}`;
+  const { json } = await fhir("emrBase", "GET", q);
+  return (json.entry || []).map(e => e.resource);
+}
+
+$("p_save").addEventListener("click", async () => {
+  const b = buildPrac();
+  if (b.error) return msg("p_msg", false, b.error);
+  $("p_save").disabled = true;
+  try {
+    const found = await findPracByLic(b.lic);
+    if (found.length > 1) {
+      log(false, `證書字號 ${b.lic} 對應到 ${found.length} 筆 Practitioner，資料異常`);
+      return msg("p_msg", false, `證書字號 ${b.lic} 對應到多筆資料，屬資料異常。請先由資訊室清理，不會新增。`);
+    }
+    if (found.length === 1) {
+      msg("p_msg", true, `此證書字號已存在（Practitioner/${found[0].id}），沿用現有資料，不重複建立。`);
+      log(true, `沿用 Practitioner/${found[0].id}`);
+      setRolePrac(found[0]);
+    } else {
+      showReq("POST", "emrBase", "Practitioner", b.resource);
+      const res = await fhir("emrBase", "POST", "Practitioner", b.resource);
+      msg("p_msg", true, `已建立醫護人員 Practitioner/${res.json.id}`);
+      log(true, `EMR：Practitioner/${res.json.id} 已建立（${b.lic}）`);
+      setRolePrac(res.json);
+    }
+    $("r_lic").value = b.lic;
+    $("s3").open = true;
+  } catch (e) { log(false, e.message); msg("p_msg", false, e.message); }
+  finally { $("p_save").disabled = false; }
+});
+
+// ---------- step 3: PractitionerRole ----------
+let rolePrac = null;
+function setRolePrac(p) {
+  rolePrac = p;
+  const n = p.name && p.name[0] ? (p.name[0].text || (p.name[0].family || "") + (p.name[0].given || []).join("")) : "";
+  $("r_pracInfo").textContent = `Practitioner/${p.id}　${n}`;
+  $("r_save").disabled = false;
+  updateRolePreview();
+}
+$("r_lic").addEventListener("input", () => { rolePrac = null; $("r_save").disabled = true; $("r_pracInfo").textContent = "輸入後按「查詢」"; updateRolePreview(); });
+$("r_find").addEventListener("click", async () => {
+  const lic = $("r_lic").value.trim();
+  if (!lic) return msg("r_msg", false, "請先輸入證書字號");
+  try {
+    const found = await findPracByLic(lic);
+    if (found.length === 0) return msg("r_msg", false, "查無此人，請先在步驟 2 建立醫護人員。");
+    if (found.length > 1) return msg("r_msg", false, "此證書字號對應到多筆資料，屬資料異常，不可指派。");
+    msg("r_msg", true, "已找到醫護人員");
+    setRolePrac(found[0]);
+  } catch (e) { msg("r_msg", false, e.message); }
+});
+
+function buildRole() {
+  if (!rolePrac) return { error: "請先查詢醫護人員" };
+  const orgId = $("r_org").value;
+  if (!orgId) return { error: "請選擇任職單位" };
+  if (!$("r_start").value) return { error: "請填到職日" };
+  const id = `role-${rolePrac.id}-${orgId.replace(/^org-/,"")}`;
+  if (!ID_RE.test(id)) return { error: `id ${id} 超過 64 字元或含不允許字元` };
+  const org = orgs.find(o => o.id === orgId);
+  const [code, display] = $("r_code").value.split("|");
+  const end = $("r_end").value;
+  const r = {
+    resourceType: "PractitionerRole", id,
+    active: !end || end >= new Date().toISOString().slice(0,10),
+    period: end ? { start: $("r_start").value, end } : { start: $("r_start").value },
+    practitioner: { reference: `Practitioner/${rolePrac.id}` },
+    organization: { reference: `Organization/${orgId}`, display: org ? org.name : undefined },
+    code: [{ coding: [{ system: ROLE_SYS, code, display }] }]
+  };
+  if ($("r_spec").value) { const [sc, sd] = $("r_spec").value.split("|"); r.specialty = [{ coding: [{ system: SNOMED, code: sc, display: sd }] }]; }
+  return { id, resource: r };
+}
+function updateRolePreview() {
+  const b = buildRole();
+  $("r_id").textContent = b.id || "—";
+  if (b.resource) showReq("PUT", "emrBase", "PractitionerRole/" + b.id, b.resource);
+}
+["r_org","r_code","r_spec","r_start","r_end"].forEach(k => $(k).addEventListener("input", updateRolePreview));
+$("s3").addEventListener("toggle", () => { if ($("s3").open) updateRolePreview(); });
+
+$("r_save").addEventListener("click", async () => {
+  const b = buildRole();
+  if (b.error) return msg("r_msg", false, b.error);
+  if (b.resource.period.end && b.resource.period.end < b.resource.period.start) return msg("r_msg", false, "離職日不可早於到職日");
+  $("r_save").disabled = true;
+  try {
+    let exists = false;
+    try { await fhir("emrBase", "GET", "PractitionerRole/" + b.id); exists = true; } catch (e) { if (e.status !== 404 && e.status !== 410) throw e; }
+    if (exists && !confirm(`${b.id} 已存在，PUT 會覆寫現有職務。確定要覆寫嗎？`)) return;
+    showReq("PUT", "emrBase", "PractitionerRole/" + b.id, b.resource);
+    const res = await fhir("emrBase", "PUT", "PractitionerRole/" + b.id, b.resource);
+    msg("r_msg", true, `已指派職務 ${b.id}`);
+    log(true, `EMR：PractitionerRole/${b.id} ${res.status === 201 ? "已建立" : "已更新"}`);
+  } catch (e) { log(false, e.message); msg("r_msg", false, e.message); }
+  finally { $("r_save").disabled = !rolePrac; }
+});
+
+// ---------- init ----------
+$("r_start").value = new Date().toISOString().slice(0,10);
+updateOrgPreview();
+loadTree();
+</script>
+</body>
+</html>
